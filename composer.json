@@ -1,0 +1,35 @@
+{
+    "name": "tmekinyan/couchbase",
+    "type": "library",
+    "description": "Couchbase Adapter",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Tigran Mekinyan",
+            "email": "tmekinyan@mail.ru"
+        }
+    ],
+    "require": {
+        "php": "^7.3",
+        "ext-json": "*",
+        "ext-couchbase": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.0",
+        "phpstan/phpstan": "^0.11"
+    },
+    "autoload": {
+        "psr-4": {
+            "Adapters\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "vendor/bin/phpstan analyse src --level max"
+    }
+}

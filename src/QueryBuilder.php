@@ -148,9 +148,7 @@ class QueryBuilder
 		$fields = [];
 
 		foreach ($columns as $column) {
-			if (strpos($column, "(") === false) {
-				$fields[] = $bucket . "." . $column;
-			}
+			$fields[] = (strpos($column, "(") !== false) ? $column : $bucket . "." . $column;
 		}
 
 		return implode(",", $fields);

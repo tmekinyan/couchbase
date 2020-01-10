@@ -117,7 +117,7 @@ class Couchbase
 		$bucket = $this->buckets->get();
 
 		if ($expiry > 0 && $expiry < time()) {
-			$expiry = +time();
+			$expiry += time();
 		}
 
 		$bucket->upsert([$cbId], $document, ['expiry' => $expiry]);

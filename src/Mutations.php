@@ -19,7 +19,9 @@ class Mutations
 		}
 
 		if ($mutation === 'counter') {
-			$mutateInBuilder = $mutateInBuilder->counter($path, $data);
+			if ($data !== 0) {
+				$mutateInBuilder = $mutateInBuilder->counter($path, $data);
+			}
 		}
 
 		if ($mutation === 'prepend') {

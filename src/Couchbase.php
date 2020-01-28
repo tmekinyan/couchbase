@@ -8,6 +8,8 @@ class Couchbase
 	private $buckets;
 	/** @var QueryBuilder */
 	private $queryBuilder;
+	/** @var QueryFilters */
+	private $queryFilters;
 	/** @var Queue */
 	private $queue;
 	/** @var Mutations */
@@ -23,14 +25,16 @@ class Couchbase
 	 *
 	 * @param Buckets      $buckets
 	 * @param QueryBuilder $queryBuilder
+	 * @param QueryFilters $queryFilters
 	 * @param Mutations    $mutations
 	 * @param Queue        $queue
 	 * @param Response     $response
 	 */
-	public function __construct(Buckets $buckets, QueryBuilder $queryBuilder, Mutations $mutations, Queue $queue, Response $response)
+	public function __construct(Buckets $buckets, QueryBuilder $queryBuilder, QueryFilters $queryFilters, Mutations $mutations, Queue $queue, Response $response)
 	{
 		$this->buckets      = $buckets;
 		$this->queryBuilder = $queryBuilder;
+		$this->queryFilters = $queryFilters;
 		$this->mutations    = $mutations;
 		$this->queue        = $queue;
 		$this->response     = $response;
@@ -263,6 +267,47 @@ class Couchbase
 	public function where(string $query): Couchbase
 	{
 		$this->queryBuilder->where($query);
+
+		return $this;
+	}
+
+	/**
+	 * @param array $rawFilters
+	 * @param array $options
+	 *
+	 * @return Couchbase
+	 */
+	public function filters(array $rawFilters, array $options = []): Couchbase
+	{
+		foreach ($rawFilters as $filter => $value) {
+			$name     = $this->queryFilters->getName($filter);
+			$operator = $this->queryFilters->getOperator($filter);
+
+			$where = $this->queryFilters->make($name, $operator, $value, $options);
+
+			$this->queryBuilder->where($where);
+		}
+
+		return $this;
+	}
+
+	/**
+	 * @param string $iterable
+	 * @param array  $rawFilters
+	 * @param array  $options
+	 *
+	 * @return Couchbase
+	 */
+	public function filterIterable(string $iterable, array $rawFilters, array $options = []): Couchbase
+	{
+		foreach ($rawFilters as $filter => $value) {
+			$name     = $this->queryFilters->getName($filter);
+			$operator = $this->queryFilters->getOperator($filter);
+
+			$where = $this->queryFilters->makeWithIterable($iterable, $name, $operator, $value, $options);
+
+			$this->queryBuilder->where($where);
+		}
 
 		return $this;
 	}

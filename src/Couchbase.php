@@ -313,6 +313,18 @@ class Couchbase
 	}
 
 	/**
+	 * @param string $groupBy
+	 *
+	 * @return Couchbase
+	 */
+	public function groupBy(string $groupBy): Couchbase
+	{
+		$this->queryBuilder->groupBy($groupBy);
+
+		return $this;
+	}
+
+	/**
 	 * @param string $order
 	 *
 	 * @return Couchbase

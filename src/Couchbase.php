@@ -313,13 +313,13 @@ class Couchbase
 	}
 
 	/**
-	 * @param string $groupBy
+	 * @param string $group
 	 *
 	 * @return Couchbase
 	 */
-	public function groupBy(string $groupBy): Couchbase
+	public function group(string $group): Couchbase
 	{
-		$this->queryBuilder->groupBy($groupBy);
+		$this->queryBuilder->group($group);
 
 		return $this;
 	}

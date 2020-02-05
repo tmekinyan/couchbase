@@ -68,14 +68,14 @@ class QueryBuilder
 	}
 
 	/**
-	 * @param string $groupBy
+	 * @param string $group
 	 */
-	public function groupBy(string $groupBy)
+	public function group(string $group)
 	{
-		if (!empty($groupBy)) {
+		if (!empty($group)) {
 			$this->whereBuild();
 
-			$this->sql .= ' GROUP BY ' . $groupBy;
+			$this->sql .= ' GROUP BY ' . $group;
 		}
 	}
 

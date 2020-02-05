@@ -3,7 +3,7 @@ Couchbase adapter is based on the official couchbase PHP SDK and makes the work 
   
   
 ### Prerequisites
-Couchbase adapter require PHP >= 7.3.  
+Couchbase adapter require PHP >= 7.2.  
   
   
 ### Installing

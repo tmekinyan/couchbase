@@ -1,6 +1,6 @@
 <?php namespace Adapters\Models;
 
-class Metrics
+class Metric
 {
 	/** @var int */
 	public $count = 0;
@@ -14,9 +14,9 @@ class Metrics
 	 * @param int $total
 	 * @param int $time
 	 *
-	 * @return Metrics
+	 * @return Metric
 	 */
-	public function set(int $count, int $total, int $time): Metrics
+	public function set(int $count, int $total, int $time): Metric
 	{
 		$this->count = $count;
 		$this->total = $total;

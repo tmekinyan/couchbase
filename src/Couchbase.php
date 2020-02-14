@@ -1,5 +1,7 @@
 <?php namespace Adapters;
 
+use Adapters\Models\Metric;
+
 use stdClass;
 
 class Couchbase
@@ -16,8 +18,7 @@ class Couchbase
 	private $mutations;
 	/** @var Response */
 	private $response;
-
-	/** @var Models\Metrics */
+	/** @var Metrics */
 	private $metrics;
 
 	/**
@@ -29,8 +30,9 @@ class Couchbase
 	 * @param Mutations    $mutations
 	 * @param Queue        $queue
 	 * @param Response     $response
+	 * @param Metrics      $metrics
 	 */
-	public function __construct(Buckets $buckets, QueryBuilder $queryBuilder, QueryFilters $queryFilters, Mutations $mutations, Queue $queue, Response $response)
+	public function __construct(Buckets $buckets, QueryBuilder $queryBuilder, QueryFilters $queryFilters, Mutations $mutations, Queue $queue, Response $response, Metrics $metrics)
 	{
 		$this->buckets      = $buckets;
 		$this->queryBuilder = $queryBuilder;
@@ -38,6 +40,7 @@ class Couchbase
 		$this->mutations    = $mutations;
 		$this->queue        = $queue;
 		$this->response     = $response;
+		$this->metrics      = $metrics;
 	}
 
 	/**
@@ -376,30 +379,16 @@ class Couchbase
 	{
 		$response = $this->query();
 
-		$this->setLastMetrics($response);
+		$this->metrics->set($response);
 
 		return $response->rows;
 	}
 
 	/**
-	 * @param mixed $response
+	 * @return Metric
 	 */
-	public function setLastMetrics($response)
+	public function getLastMetrics(): Metric
 	{
-		$metrics = new Models\Metrics();
-
-		$metrics->count = $response->metrics["resultCount"] ?? 0;
-		$metrics->total = $response->metrics["sortCount"] ?? $response->metrics["resultCount"] ?? 0;
-		$metrics->time  = $response->metrics["executionTime"] ?? 0;
-
-		$this->metrics = $metrics;
-	}
-
-	/**
-	 * @return Models\Metrics
-	 */
-	public function getLastMetrics(): Models\Metrics
-	{
-		return $this->metrics;
+		return $this->metrics->get();
 	}
 }

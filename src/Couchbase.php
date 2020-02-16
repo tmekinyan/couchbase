@@ -3,11 +3,10 @@
 use Adapters\Models\Metric;
 
 use Couchbase\Cluster;
+use Couchbase\Bucket;
 
 class Couchbase
 {
-	/** @var Buckets */
-	private $buckets;
 	/** @var QueryBuilder */
 	private $queryBuilder;
 	/** @var QueryFilters */
@@ -21,13 +20,17 @@ class Couchbase
 	/** @var Metrics */
 	private $metrics;
 
+	/** @var Bucket[] */
+	private $buckets = [];
+
 	/** @var Cluster */
 	private $cluster;
+	/** @var Bucket */
+	private $bucket;
 
 	/**
 	 * Couchbase constructor.
 	 *
-	 * @param Buckets      $buckets
 	 * @param QueryBuilder $queryBuilder
 	 * @param QueryFilters $queryFilters
 	 * @param Mutations    $mutations
@@ -35,9 +38,8 @@ class Couchbase
 	 * @param Response     $response
 	 * @param Metrics      $metrics
 	 */
-	public function __construct(Buckets $buckets, QueryBuilder $queryBuilder, QueryFilters $queryFilters, Mutations $mutations, Queue $queue, Response $response, Metrics $metrics)
+	public function __construct(QueryBuilder $queryBuilder, QueryFilters $queryFilters, Mutations $mutations, Queue $queue, Response $response, Metrics $metrics)
 	{
-		$this->buckets      = $buckets;
 		$this->queryBuilder = $queryBuilder;
 		$this->queryFilters = $queryFilters;
 		$this->mutations    = $mutations;
@@ -59,20 +61,25 @@ class Couchbase
 	}
 
 	/**
-	 * @param string $bucket
-	 * @param string $host
-	 * @param string $user
-	 * @param string $pass
-	 *
-	 * @return Couchbase
+	 * @param string $bucketName
 	 */
-	public function connectTo(string $bucket, string $host, string $user, string $pass): Couchbase
+	public function setBucket(string $bucketName): void
 	{
-		if ($this->buckets->isNotOpen($bucket)) {
-			$this->buckets->open($bucket, $host, $user, $pass);
+		$buckets = new Buckets();
+
+		$this->buckets[$bucketName] = $buckets->open($this->cluster, $bucketName);
+	}
+
+	/**
+	 * @param string $bucketName
+	 */
+	public function getBucket(string $bucketName): void
+	{
+		if (!array_key_exists($bucketName, $this->buckets)) {
+			$this->setBucket($bucketName);
 		}
 
-		return $this;
+		$this->bucket = $this->buckets[$bucketName];
 	}
 
 	/**
@@ -82,11 +89,9 @@ class Couchbase
 	 */
 	public function exist(string $cbId): bool
 	{
-		$bucket = $this->buckets->get();
-
-		$response = $bucket->lookupIn($cbId)
-						   ->exists('cbId')
-						   ->execute();
+		$response = $this->bucket->lookupIn($cbId)
+								 ->exists('cbId')
+								 ->execute();
 
 		return ($response->value[0]['code'] === COUCHBASE_SUBDOC_PATH_ENOENT);
 	}
@@ -99,9 +104,7 @@ class Couchbase
 	 */
 	public function getPart(string $cbId, array $paths)
 	{
-		$bucket = $this->buckets->get();
-
-		$lookupInBuilder = $bucket->lookupIn($cbId);
+		$lookupInBuilder = $this->bucket->lookupIn($cbId);
 
 		foreach ($paths as $path) {
 			$lookupInBuilder = $lookupInBuilder->get($path);
@@ -120,9 +123,7 @@ class Couchbase
 	 */
 	public function get(array $cbId, bool $uniqueResultDirectReturn = true)
 	{
-		$bucket = $this->buckets->get();
-
-		$response = $bucket->get($cbId); //return an array with the data in "value" key
+		$response = $this->bucket->get($cbId); //return an array with the data in "value" key
 
 		$formatted = $this->response->format($response); //There is always one element in $return (can be null)
 
@@ -136,13 +137,11 @@ class Couchbase
 	 */
 	public function set(string $cbId, $document, int $expiry = 0): void
 	{
-		$bucket = $this->buckets->get();
-
 		if ($expiry > 0 && $expiry < time()) {
 			$expiry += time();
 		}
 
-		$bucket->upsert([$cbId], $document, ['expiry' => $expiry]);
+		$this->bucket->upsert([$cbId], $document, ['expiry' => $expiry]);
 	}
 
 	/**
@@ -151,9 +150,7 @@ class Couchbase
 	 */
 	public function setPart(string $cbId, array $mutation): void
 	{
-		$bucket = $this->buckets->get();
-
-		$mutateInBuilder = $bucket->mutateIn($cbId, '');
+		$mutateInBuilder = $this->bucket->mutateIn($cbId, '');
 
 		foreach ($mutation as $operation => $aux) {
 			foreach ($aux as $path => $data) {
@@ -196,9 +193,7 @@ class Couchbase
 	 */
 	public function replace(string $cbId, $document, string $cas, int $expiry = 0): void
 	{
-		$bucket = $this->buckets->get();
-
-		$bucket->replace([$cbId], $document, ['cas' => $cas, 'expiry' => $expiry]);
+		$this->bucket->replace([$cbId], $document, ['cas' => $cas, 'expiry' => $expiry]);
 	}
 
 	/**
@@ -206,9 +201,7 @@ class Couchbase
 	 */
 	public function remove(string $cbId): void
 	{
-		$bucket = $this->buckets->get();
-
-		$bucket->remove([$cbId]);
+		$this->bucket->remove([$cbId]);
 	}
 
 	/**
@@ -220,9 +213,7 @@ class Couchbase
 	 */
 	public function counter(string $cbId, int $amount, int $initial = 0): int
 	{
-		$bucket = $this->buckets->get();
-
-		$response = $bucket->counter($cbId, $amount, ['initial' => $initial]);
+		$response = $this->bucket->counter($cbId, $amount, ['initial' => $initial]);
 
 		return (int) $this->response->formatDocument($response);
 	}
@@ -234,9 +225,7 @@ class Couchbase
 	 */
 	public function select(array $columns = []): Couchbase
 	{
-		$bucketName = $this->buckets->getName();
-
-		$this->queryBuilder->select($bucketName, $columns);
+		$this->queryBuilder->select($this->bucket->getName(), $columns);
 
 		return $this;
 	}
@@ -246,9 +235,7 @@ class Couchbase
 	 */
 	public function delete(): Couchbase
 	{
-		$bucketName = $this->buckets->getName();
-
-		$this->queryBuilder->delete($bucketName);
+		$this->queryBuilder->delete($this->bucket->getName());
 
 		return $this;
 	}
@@ -380,11 +367,9 @@ class Couchbase
 	 */
 	public function query()
 	{
-		$bucket = $this->buckets->get();
-
 		$statement = $this->queryBuilder->query();
 
-		return $bucket->query($statement);
+		return $this->bucket->query($statement);
 	}
 
 	/**

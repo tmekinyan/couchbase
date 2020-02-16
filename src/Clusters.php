@@ -1,6 +1,6 @@
 <?php namespace Adapters;
 
-use CouchbaseCluster;
+use Couchbase\Cluster;
 
 class Clusters
 {
@@ -9,12 +9,12 @@ class Clusters
 	 * @param string $user
 	 * @param string $pass
 	 *
-	 * @return CouchbaseCluster
+	 * @return Cluster
 	 */
-	public function authenticate(string $host, string $user, string $pass): CouchbaseCluster
+	public function authenticate(string $host, string $user, string $pass): Cluster
 	{
 		// Connect to Couchbase Server
-		$cluster = new CouchbaseCluster('couchbase://' . $host);
+		$cluster = new Cluster('couchbase://' . $host);
 
 		//Authenticate with username and password
 		$cluster->authenticateAs($user, $pass);

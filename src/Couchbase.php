@@ -2,7 +2,7 @@
 
 use Adapters\Models\Metric;
 
-use stdClass;
+use Couchbase\Cluster;
 
 class Couchbase
 {
@@ -20,6 +20,9 @@ class Couchbase
 	private $response;
 	/** @var Metrics */
 	private $metrics;
+
+	/** @var Cluster */
+	private $cluster;
 
 	/**
 	 * Couchbase constructor.
@@ -41,6 +44,18 @@ class Couchbase
 		$this->queue        = $queue;
 		$this->response     = $response;
 		$this->metrics      = $metrics;
+	}
+
+	/**
+	 * @param string $host
+	 * @param string $user
+	 * @param string $pass
+	 */
+	public function setCluster(string $host, string $user, string $pass): void
+	{
+		$clusters = new Clusters();
+
+		$this->cluster = $clusters->authenticate($host, $user, $pass);
 	}
 
 	/**
@@ -80,9 +95,9 @@ class Couchbase
 	 * @param string $cbId
 	 * @param array  $paths
 	 *
-	 * @return stdClass
+	 * @return object
 	 */
-	public function getPart(string $cbId, array $paths): stdClass
+	public function getPart(string $cbId, array $paths)
 	{
 		$bucket = $this->buckets->get();
 

@@ -2,8 +2,6 @@
 
 use Couchbase\N1qlQuery;
 
-use CouchbaseN1qlQuery;
-
 class QueryBuilder
 {
 	/** @var string */
@@ -12,17 +10,17 @@ class QueryBuilder
 	private $where = [];
 
 	/**
-	 * @param string $bucket
+	 * @param string $bucketName
 	 * @param array  $columns
 	 */
-	public function select(string $bucket, array $columns)
+	public function select(string $bucketName, array $columns)
 	{
-		$this->sql = 'SELECT ' . $this->generateSelectFields($bucket, $columns) . ' FROM ' . $bucket;
+		$this->sql = 'SELECT ' . $this->generateSelectFields($bucketName, $columns) . ' FROM ' . $bucketName;
 	}
 
-	public function delete(string $bucket)
+	public function delete(string $bucketName)
 	{
-		$this->sql = 'DELETE FROM ' . $bucket;
+		$this->sql = 'DELETE FROM ' . $bucketName;
 	}
 
 	/**
@@ -131,48 +129,48 @@ class QueryBuilder
 	{
 		$sql = $this->toSQL();
 
-		return CouchbaseN1qlQuery::fromString($sql);
+		return N1qlQuery::fromString($sql);
 	}
 
 	/**
-	 * @param string $bucket
+	 * @param string $bucketName
 	 * @param array  $columns
 	 *
 	 * @return string
 	 */
-	public function generateSelectFields(string $bucket, array $columns): string
+	public function generateSelectFields(string $bucketName, array $columns): string
 	{
 		if (empty($columns)) {
-			return $this->generateSelectFieldsAll($bucket);
+			return $this->generateSelectFieldsAll($bucketName);
 		}
 
-		return $this->generateSelectFieldsProvided($bucket, $columns);
+		return $this->generateSelectFieldsProvided($bucketName, $columns);
 	}
 
 	/**
-	 * @param string $bucket
+	 * @param string $bucketName
 	 * @param array  $columns
 	 *
 	 * @return string
 	 */
-	public function generateSelectFieldsProvided(string $bucket, array $columns): string
+	public function generateSelectFieldsProvided(string $bucketName, array $columns): string
 	{
 		$fields = [];
 
 		foreach ($columns as $column) {
-			$fields[] = (strpos($column, "(") !== false) ? $column : $bucket . "." . $column;
+			$fields[] = (strpos($column, "(") !== false) ? $column : $bucketName . "." . $column;
 		}
 
 		return implode(",", $fields);
 	}
 
 	/**
-	 * @param string $bucket
+	 * @param string $bucketName
 	 *
 	 * @return string
 	 */
-	public function generateSelectFieldsAll(string $bucket): string
+	public function generateSelectFieldsAll(string $bucketName): string
 	{
-		return $bucket . ".*";
+		return $bucketName . ".*";
 	}
 }

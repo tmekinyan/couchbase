@@ -5,7 +5,7 @@ use Couchbase\DocumentFragment;
 
 use stdClass;
 
-class Response
+class Responses
 {
 	/**
 	 * @param array $documents

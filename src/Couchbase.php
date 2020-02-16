@@ -11,14 +11,15 @@ class Couchbase
 	private $queryBuilder;
 	/** @var QueryFilters */
 	private $queryFilters;
-	/** @var Queue */
-	private $queue;
 	/** @var Mutations */
 	private $mutations;
-	/** @var Response */
-	private $response;
+	/** @var Responses */
+	private $responses;
 	/** @var Metrics */
 	private $metrics;
+
+	/** @var mixed[] */
+	private $queue = [];
 
 	/** @var Bucket[] */
 	private $buckets = [];
@@ -34,17 +35,15 @@ class Couchbase
 	 * @param QueryBuilder $queryBuilder
 	 * @param QueryFilters $queryFilters
 	 * @param Mutations    $mutations
-	 * @param Queue        $queue
-	 * @param Response     $response
+	 * @param Responses    $responses
 	 * @param Metrics      $metrics
 	 */
-	public function __construct(QueryBuilder $queryBuilder, QueryFilters $queryFilters, Mutations $mutations, Queue $queue, Response $response, Metrics $metrics)
+	public function __construct(QueryBuilder $queryBuilder, QueryFilters $queryFilters, Mutations $mutations, Responses $responses, Metrics $metrics)
 	{
 		$this->queryBuilder = $queryBuilder;
 		$this->queryFilters = $queryFilters;
 		$this->mutations    = $mutations;
-		$this->queue        = $queue;
-		$this->response     = $response;
+		$this->responses    = $responses;
 		$this->metrics      = $metrics;
 	}
 
@@ -112,7 +111,7 @@ class Couchbase
 
 		$response = $lookupInBuilder->execute();
 
-		return $this->response->formatFragment($response, $paths);
+		return $this->responses->formatFragment($response, $paths);
 	}
 
 	/**
@@ -125,7 +124,7 @@ class Couchbase
 	{
 		$response = $this->bucket->get($cbId); //return an array with the data in "value" key
 
-		$formatted = $this->response->format($response); //There is always one element in $return (can be null)
+		$formatted = $this->responses->format($response); //There is always one element in $return (can be null)
 
 		return ($uniqueResultDirectReturn && count($formatted) === 1) ? $formatted[0] : $formatted;
 	}
@@ -168,7 +167,9 @@ class Couchbase
 	 */
 	public function queue($model): bool
 	{
-		return $this->queue->add($model);
+		$this->queue[] = $model;
+
+		return true;
 	}
 
 	/**
@@ -176,9 +177,7 @@ class Couchbase
 	 */
 	public function commitQueue(): bool
 	{
-		$models = $this->queue->getUncommitted();
-
-		foreach ($models as $model) {
+		foreach ($this->queue as $model) {
 			$this->set($model->cbId, $model);
 		}
 
@@ -215,7 +214,7 @@ class Couchbase
 	{
 		$response = $this->bucket->counter($cbId, $amount, ['initial' => $initial]);
 
-		return (int) $this->response->formatDocument($response);
+		return (int) $this->responses->formatDocument($response);
 	}
 
 	/**

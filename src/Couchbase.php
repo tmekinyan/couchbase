@@ -281,40 +281,25 @@ class Couchbase
 	 *
 	 * @return Couchbase
 	 */
-	public function filters(array $rawFilters, array $options = []): Couchbase
-	{
-		foreach ($rawFilters as $filter => $value) {
-			$name     = $this->queryFilters->getName($filter);
-			$operator = $this->queryFilters->getOperator($filter);
+    public function filters(array $rawFilters, array $options = []): Couchbase
+    {
+        foreach ($rawFilters as $filter => $value) {
+            $name     = $this->queryFilters->getName($filter);
+            $operator = $this->queryFilters->getOperator($filter);
 
-			$where = $this->queryFilters->make($name, $operator, $value, $options);
+            if (strpos($name, '->') !== false) {
+                [$iterable, $name] = explode('->', $name);
 
-			$this->queryBuilder->where($where);
-		}
+                $where = $this->queryFilters->makeWithIterable($iterable, $name, $operator, $value, $options);
+            } else {
+                $where = $this->queryFilters->make($name, $operator, $value, $options);
+            }
 
-		return $this;
-	}
+            $this->queryBuilder->where($where);
+        }
 
-	/**
-	 * @param string $iterable
-	 * @param array  $rawFilters
-	 * @param array  $options
-	 *
-	 * @return Couchbase
-	 */
-	public function filterIterable(string $iterable, array $rawFilters, array $options = []): Couchbase
-	{
-		foreach ($rawFilters as $filter => $value) {
-			$name     = $this->queryFilters->getName($filter);
-			$operator = $this->queryFilters->getOperator($filter);
-
-			$where = $this->queryFilters->makeWithIterable($iterable, $name, $operator, $value, $options);
-
-			$this->queryBuilder->where($where);
-		}
-
-		return $this;
-	}
+        return $this;
+    }
 
 	/**
 	 * @param string $group

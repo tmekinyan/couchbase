@@ -80,7 +80,7 @@ class QueryFilters
 	{
 		$subQuery = $this->make('item.' . $key, $operator, $value, $options);
 
-		return (empty($subQuery)) ? '' : 'ANY item IN ' . $iterable . ' SATISFIES ' . $subQuery . '" END';
+		return (empty($subQuery)) ? '' : 'ANY item IN ' . $iterable . ' SATISFIES ' . $subQuery . ' END';
 	}
 
 	/**

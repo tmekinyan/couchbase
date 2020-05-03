@@ -4,173 +4,181 @@ use Couchbase\N1qlQuery;
 
 class QueryBuilder
 {
-	/** @var string */
-	private $sql;
-	/** @var array */
-	private $where = [];
+    /** @var string */
+    private $sql;
+    /** @var array */
+    private $where = [];
 
-	/**
-	 * @param string $bucketName
-	 * @param array  $columns
-	 */
-	public function select(string $bucketName, array $columns)
-	{
-		$this->sql = 'SELECT ' . $this->generateSelectFields($bucketName, $columns) . ' FROM ' . $bucketName;
-	}
+    /**
+     * @param string $sql
+     */
+    public function raw(string $sql)
+    {
+        $this->sql = $sql;
+    }
 
-	public function delete(string $bucketName)
-	{
-		$this->sql = 'DELETE FROM ' . $bucketName;
-	}
+    /**
+     * @param string $bucketName
+     * @param array  $columns
+     */
+    public function select(string $bucketName, array $columns)
+    {
+        $this->sql = 'SELECT ' . $this->generateSelectFields($bucketName, $columns) . ' FROM ' . $bucketName;
+    }
 
-	/**
-	 * @param string $name
-	 * @param string $type
-	 */
-	public function withIndex(string $name, string $type = "GSI")
-	{
-		$this->sql .= ' USE INDEX (' . $name . ' USING ' . $type . ')';
-	}
+    public function delete(string $bucketName)
+    {
+        $this->sql = 'DELETE FROM ' . $bucketName;
+    }
 
-	/**
-	 * @param string $doctype
-	 */
-	public function doctype(string $doctype)
-	{
-		$this->where("doctype='{$doctype}'");
-	}
+    /**
+     * @param string $name
+     * @param string $type
+     */
+    public function withIndex(string $name, string $type = "GSI")
+    {
+        $this->sql .= ' USE INDEX (' . $name . ' USING ' . $type . ')';
+    }
 
-	/**
-	 * @param string $query
-	 */
-	public function where(string $query)
-	{
-		$this->where[] = $query;
-	}
+    /**
+     * @param string $doctype
+     */
+    public function doctype(string $doctype)
+    {
+        $this->where("doctype='{$doctype}'");
+    }
 
-	public function whereBuild()
-	{
-		if ($this->hasWhere()) {
-			$this->sql .= ' WHERE ' . implode(' AND ', $this->where);
+    /**
+     * @param string $query
+     */
+    public function where(string $query)
+    {
+        $this->where[] = $query;
+    }
 
-			$this->where = [];
-		}
-	}
+    public function whereBuild()
+    {
+        if ($this->hasWhere()) {
+            $this->sql .= ' WHERE ' . implode(' AND ', $this->where);
 
-	/**
-	 * @return int
-	 */
-	public function hasWhere(): int
-	{
-		return count($this->where);
-	}
+            $this->where = [];
+        }
+    }
 
-	/**
-	 * @param string $group
-	 */
-	public function group(string $group)
-	{
-		if (!empty($group)) {
-			$this->whereBuild();
+    /**
+     * @return int
+     */
+    public function hasWhere(): int
+    {
+        return count($this->where);
+    }
 
-			$this->sql .= ' GROUP BY ' . $group;
-		}
-	}
+    /**
+     * @param string $group
+     */
+    public function group(string $group)
+    {
+        if (!empty($group)) {
+            $this->whereBuild();
 
-	/**
-	 * @param string $order
-	 */
-	public function order(string $order)
-	{
-		if (!empty(trim($order))) {
-			$this->whereBuild();
+            $this->sql .= ' GROUP BY ' . $group;
+        }
+    }
 
-			$this->sql .= ' ORDER BY ' . $order;
-		}
-	}
+    /**
+     * @param string $order
+     */
+    public function order(string $order)
+    {
+        if (!empty(trim($order))) {
+            $this->whereBuild();
 
-	/**
-	 * @param int $limit
-	 * @param int $offset
-	 */
-	public function limit(int $limit, int $offset = 0)
-	{
-		if ($limit > 0) {
-			$this->whereBuild();
+            $this->sql .= ' ORDER BY ' . $order;
+        }
+    }
 
-			$this->sql .= ' LIMIT ' . $limit . $this->offset($offset);
-		}
-	}
+    /**
+     * @param int $limit
+     * @param int $offset
+     */
+    public function limit(int $limit, int $offset = 0)
+    {
+        if ($limit > 0) {
+            $this->whereBuild();
 
-	/**
-	 * @param int $offset
-	 *
-	 * @return string
-	 */
-	public function offset(int $offset): string
-	{
-		return ($offset > 0) ? ' OFFSET ' . $offset : '';
-	}
+            $this->sql .= ' LIMIT ' . $limit . $this->offset($offset);
+        }
+    }
 
-	/**
-	 * @return string
-	 */
-	public function toSQL(): string
-	{
-		$this->whereBuild();
+    /**
+     * @param int $offset
+     *
+     * @return string
+     */
+    public function offset(int $offset): string
+    {
+        return ($offset > 0) ? ' OFFSET ' . $offset : '';
+    }
 
-		return $this->sql;
-	}
+    /**
+     * @return string
+     */
+    public function toSQL(): string
+    {
+        $this->whereBuild();
 
-	/**
-	 * @return N1qlQuery
-	 */
-	public function query(): N1qlQuery
-	{
-		$sql = $this->toSQL();
+        return $this->sql;
+    }
 
-		return N1qlQuery::fromString($sql);
-	}
+    /**
+     * @return N1qlQuery
+     */
+    public function query(): N1qlQuery
+    {
+        $sql = $this->toSQL();
 
-	/**
-	 * @param string $bucketName
-	 * @param array  $columns
-	 *
-	 * @return string
-	 */
-	public function generateSelectFields(string $bucketName, array $columns): string
-	{
-		if (empty($columns)) {
-			return $this->generateSelectFieldsAll($bucketName);
-		}
+        return N1qlQuery::fromString($sql);
+    }
 
-		return $this->generateSelectFieldsProvided($bucketName, $columns);
-	}
+    /**
+     * @param string $bucketName
+     * @param array  $columns
+     *
+     * @return string
+     */
+    public function generateSelectFields(string $bucketName, array $columns): string
+    {
+        if (empty($columns)) {
+            return $this->generateSelectFieldsAll($bucketName);
+        }
 
-	/**
-	 * @param string $bucketName
-	 * @param array  $columns
-	 *
-	 * @return string
-	 */
-	public function generateSelectFieldsProvided(string $bucketName, array $columns): string
-	{
-		$fields = [];
+        return $this->generateSelectFieldsProvided($bucketName, $columns);
+    }
 
-		foreach ($columns as $column) {
-			$fields[] = (strpos($column, "(") !== false) ? $column : $bucketName . "." . $column;
-		}
+    /**
+     * @param string $bucketName
+     * @param array  $columns
+     *
+     * @return string
+     */
+    public function generateSelectFieldsProvided(string $bucketName, array $columns): string
+    {
+        $fields = [];
 
-		return implode(",", $fields);
-	}
+        foreach ($columns as $column) {
+            $fields[] = (strpos($column, "(") !== false) ? $column : $bucketName . "." . $column;
+        }
 
-	/**
-	 * @param string $bucketName
-	 *
-	 * @return string
-	 */
-	public function generateSelectFieldsAll(string $bucketName): string
-	{
-		return $bucketName . ".*";
-	}
+        return implode(",", $fields);
+    }
+
+    /**
+     * @param string $bucketName
+     *
+     * @return string
+     */
+    public function generateSelectFieldsAll(string $bucketName): string
+    {
+        return $bucketName . ".*";
+    }
 }

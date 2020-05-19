@@ -129,6 +129,6 @@ class QueryFilters
      */
     public function isColumn(string $value): bool
     {
-        return strlen($value) > 5 && substr($value, 4) === 'COL(' && substr($value, -1) === ')';
+        return strlen($value) > 5 && substr($value, 0, 4) === 'COL(' && substr($value, -1) === ')';
     }
 }

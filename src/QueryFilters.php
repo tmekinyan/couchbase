@@ -52,17 +52,20 @@ class QueryFilters
 			return '';
 		}
 
-		if ($operator === ' IN ') {
-			$value = $this->inValue($value);
-		} else {
-			if ($operator === ' LIKE ') {
-				$value = $this->likeValue($value);
-			}
-
-			if ($this->shouldHaveQuote($value)) {
-				$value = '"' . $value . '"';
-			}
-		}
+        switch ($operator) {
+            case ' IN ':
+                $value = $this->inValue($value);
+                break;
+            case ' LIKE ':
+                $value = '"' . $this->likeValue($value) . '"';
+                break;
+            default:
+                if ($this->isColumn($value)) {
+                    $value = substr($value, 4, strlen($value) - 5); //Remove COL()
+                } else if ($this->shouldHaveQuote($value)) {
+                    $value = '"' . $value . '"';
+                }
+        }
 
 		return $key . $operator . $value;
 	}
@@ -116,10 +119,16 @@ class QueryFilters
 	{
 		$withoutCommas = str_replace(',', '', $value);
 
-		if (!is_numeric($withoutCommas) && !in_array($withoutCommas, ['true', 'false'])) {
-			return true;
-		}
-
-		return false;
+		return !is_numeric($withoutCommas) && !in_array($withoutCommas, ['true', 'false']);
 	}
+
+    /**
+     * @param string $value
+     *
+     * @return bool
+     */
+    public function isColumn(string $value): bool
+    {
+        return strlen($value) > 5 && substr($value, 4) === 'COL(' && substr($value, -1) === ')';
+    }
 }
